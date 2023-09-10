@@ -6,7 +6,7 @@ mod record;
 
 use std::{
     io::Cursor,
-    net::{SocketAddr, UdpSocket},
+    net::{IpAddr, SocketAddr, UdpSocket},
 };
 
 use bytes::Bytes;
@@ -62,7 +62,7 @@ impl<R: rand::Rng> QueryBuilder<R> {
 fn build_query<R: rand::Rng>(rng: &mut R, domain_name: &str, record_type: u16) -> Vec<u8> {
     let name = encode_domain_name(domain_name);
     let id = rng.gen::<u16>();
-    let recursion_desired = 1 << 8;
+    let recursion_desired = 0;
     let mut header = DNSHeader::new(id, recursion_desired);
     header.num_questions = 1;
     let question = DNSQuestion {
@@ -74,6 +74,24 @@ fn build_query<R: rand::Rng>(rng: &mut R, domain_name: &str, record_type: u16) -
     acc.extend(header.to_be_bytes());
     acc.extend(question.to_be_bytes());
     acc
+}
+
+fn send_query<R: rand::Rng>(
+    rng: &mut R,
+    ip_address: IpAddr,
+    domain_name: &str,
+    record_type: u16,
+) -> eyre::Result<DNSPacket> {
+    let query = build_query(rng, domain_name, record_type);
+    let socket = socket2::Socket::new(Domain::IPV4, Type::DGRAM, None)?;
+    let socket: UdpSocket = socket.into();
+    let addr: SocketAddr = SocketAddr::new(ip_address, 53);
+    socket.send_to(&query, addr)?;
+    let mut buf = [0; 1024];
+    socket.recv_from(&mut buf)?;
+    Ok(DNSPacket::parse_dns_packet(&mut Cursor::new(
+        Bytes::copy_from_slice(&buf[..]),
+    )))
 }
 
 fn ip_to_string(ip: &[u8]) -> String {
@@ -97,11 +115,23 @@ fn lookup_doman(domain: &str) -> eyre::Result<String> {
 }
 
 fn main() -> eyre::Result<()> {
-    println!("Domain: \"example.com\", IP: {}", lookup_doman("www.example.com")?);
-    println!("Domain: \"recurse.com\", IP: {}", lookup_doman("recurse.com")?);
-    println!("Domain: \"metafilter.com\", IP: {}", lookup_doman("metafilter.com")?);
+    println!(
+        "Domain: \"example.com\", IP: {}",
+        lookup_doman("www.example.com")?
+    );
+    println!(
+        "Domain: \"recurse.com\", IP: {}",
+        lookup_doman("recurse.com")?
+    );
+    println!(
+        "Domain: \"metafilter.com\", IP: {}",
+        lookup_doman("metafilter.com")?
+    );
 
-    println!("Domain: \"www.facebook.com\", IP: {}", lookup_doman("www.facebook.com")?);
+    println!(
+        "Domain: \"www.facebook.com\", IP: {}",
+        lookup_doman("www.facebook.com")?
+    );
     // println!("Domain: \"www.metafilter.com\", IP: {}", lookup_doman("www.metafilter.com")?);
     // let mut rng = rand::thread_rng();
     // let query = build_query(&mut rng, "www.example.com", TYPE_A);

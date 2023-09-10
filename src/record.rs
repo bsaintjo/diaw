@@ -1,8 +1,16 @@
-use std::io::Seek;
+use std::{io::Seek, net::IpAddr};
 
 use bytes::Buf;
 
 use crate::encoding;
+
+pub const TYPE_A: u16 = 1;
+pub const TYPE_NS: u16 = 2;
+
+pub enum DNSRecordResult {
+    NameServer(String),
+    Address(IpAddr),
+}
 
 pub struct DNSRecord {
     name: String,
@@ -22,7 +30,11 @@ impl DNSRecord {
         let class = bytes.get_u16();
         let ttl = bytes.get_u32();
         let data_len = bytes.get_u16() as usize;
-        // let mut data = Vec::with_capacity(data_len);
+        let data = match qtype {
+            TYPE_A => todo!(),
+            TYPE_NS => todo!(),
+            _ => todo!(),
+        };
         let mut data = vec![0; data_len];
         bytes.copy_to_slice(&mut data);
         DNSRecord {
