@@ -1,9 +1,11 @@
 
 
+use rand::SeedableRng;
+
 use crate::{record::DNSRecordResult, send_query, TYPE_A};
 
 fn resolve2(domain_name: &str, record_type: u16) -> eyre::Result<DNSRecordResult> {
-    let rng = &mut rand::thread_rng();
+    let rng = &mut rand::rngs::SmallRng::from_entropy();
     let mut nameserver = "198.41.0.4".parse().unwrap();
     let mut domain_names = vec![domain_name.to_string()];
 
@@ -30,7 +32,7 @@ fn resolve2(domain_name: &str, record_type: u16) -> eyre::Result<DNSRecordResult
 }
 
 fn resolve(domain_name: &str, record_type: u16) -> eyre::Result<DNSRecordResult> {
-    let rng = &mut rand::thread_rng();
+    let rng = &mut rand::rngs::SmallRng::from_entropy();
     let mut nameserver = "198.41.0.4".parse().unwrap();
     let ip = loop {
         println!("Querying {nameserver} for {domain_name}");

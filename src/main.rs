@@ -16,6 +16,7 @@ use encoding::encode_domain_name;
 use header::DNSHeader;
 use packet::DNSPacket;
 use question::DNSQuestion;
+use rand::SeedableRng;
 use socket2::{Domain, Type};
 
 const TYPE_A: u16 = 1;
@@ -98,7 +99,7 @@ fn ip_to_string(ip: &[u8]) -> String {
 }
 
 fn main() -> eyre::Result<()> {
-    let rng = &mut rand::thread_rng();
+    let rng = &mut rand::rngs::SmallRng::from_entropy();
     let ip_addr = IpAddr::from_str("198.41.0.4").unwrap();
     let domain_name = "www.google.com";
     let record_type = TYPE_A;
