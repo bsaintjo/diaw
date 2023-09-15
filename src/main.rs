@@ -3,10 +3,12 @@ mod header;
 mod packet;
 mod question;
 mod record;
+mod resolve;
 
 use std::{
     io::Cursor,
     net::{IpAddr, SocketAddr, UdpSocket},
+    str::FromStr,
 };
 
 use bytes::Bytes;
@@ -15,8 +17,6 @@ use header::DNSHeader;
 use packet::DNSPacket;
 use question::DNSQuestion;
 use socket2::{Domain, Type};
-
-use crate::record::DNSRecord;
 
 const TYPE_A: u16 = 1;
 const CLASS_IN: u16 = 1;
@@ -89,66 +89,40 @@ fn send_query<R: rand::Rng>(
     socket.send_to(&query, addr)?;
     let mut buf = [0; 1024];
     socket.recv_from(&mut buf)?;
-    Ok(DNSPacket::parse_dns_packet(&mut Cursor::new(
-        Bytes::copy_from_slice(&buf[..]),
-    )))
+    let mut buf = Cursor::new(Bytes::copy_from_slice(&buf[..]));
+    Ok(DNSPacket::parse_dns_packet(&mut buf))
 }
 
 fn ip_to_string(ip: &[u8]) -> String {
     format!("{}.{}.{}.{}", ip[0], ip[1], ip[2], ip[3])
 }
 
-fn lookup_doman(domain: &str) -> eyre::Result<String> {
-    let query = build_query(&mut rand::thread_rng(), domain, TYPE_A);
-    let socket = socket2::Socket::new(Domain::IPV4, Type::DGRAM, None)?;
-    let socket: UdpSocket = socket.into();
-    let addr: SocketAddr = "8.8.8.8:53".parse().unwrap();
-    socket.send_to(&query, addr)?;
-
-    let mut buf = [0; 1024];
-    let _ = socket.recv_from(&mut buf)?;
-    let mut buf = Cursor::new(Bytes::copy_from_slice(&buf[..]));
-    let response = DNSPacket::parse_dns_packet(&mut buf);
-    let ip = response.answers()[0].data();
-
-    Ok(ip_to_string(ip))
-}
-
 fn main() -> eyre::Result<()> {
-    println!(
-        "Domain: \"example.com\", IP: {}",
-        lookup_doman("www.example.com")?
-    );
-    println!(
-        "Domain: \"recurse.com\", IP: {}",
-        lookup_doman("recurse.com")?
-    );
-    println!(
-        "Domain: \"metafilter.com\", IP: {}",
-        lookup_doman("metafilter.com")?
-    );
+    let rng = &mut rand::thread_rng();
+    let ip_addr = IpAddr::from_str("198.41.0.4").unwrap();
+    let domain_name = "www.google.com";
+    let record_type = TYPE_A;
+    let response = send_query(rng, ip_addr, domain_name, record_type).unwrap();
+    println!("Authorities {:#?}", response.authorities());
+    println!("Additionals {:#?}", response.additionals());
 
-    println!(
-        "Domain: \"www.facebook.com\", IP: {}",
-        lookup_doman("www.facebook.com")?
-    );
-    // println!("Domain: \"www.metafilter.com\", IP: {}", lookup_doman("www.metafilter.com")?);
-    // let mut rng = rand::thread_rng();
-    // let query = build_query(&mut rng, "www.example.com", TYPE_A);
-    // let socket = socket2::Socket::new(Domain::IPV4, Type::DGRAM, None)?;
-    // let socket: UdpSocket = socket.into();
-    // let addr: SocketAddr = "8.8.8.8:53".parse().unwrap();
-    // socket.send_to(&query, addr)?;
-
-    // let mut buf = [0; 1024];
-    // let _ = socket.recv_from(&mut buf)?;
-    // let mut buf = Cursor::new(Bytes::copy_from_slice(&buf[..]));
-    // let header = DNSHeader::parse_header(&mut buf);
-    // let question = DNSQuestion::parse_question(&mut buf);
-    // let record = DNSRecord::parse_record(&mut buf);
-
-    // println!("{:#?}", header);
-
+    let response = send_query(
+        rng,
+        "192.12.94.30".parse().unwrap(),
+        domain_name,
+        record_type,
+    )
+    .unwrap();
+    println!("Authorities {:#?}", response.authorities());
+    println!("Additionals {:#?}", response.additionals());
+    let response = send_query(
+        rng,
+        "216.239.32.10".parse().unwrap(),
+        domain_name,
+        record_type,
+    )
+    .unwrap();
+    println!("Answer {:#?}", response.answers());
     Ok(())
 }
 

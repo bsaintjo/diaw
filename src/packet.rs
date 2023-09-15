@@ -2,7 +2,12 @@ use std::io::Seek;
 
 use bytes::Buf;
 
-use crate::{header::DNSHeader, question::DNSQuestion, record::DNSRecord};
+use crate::{
+    header::DNSHeader,
+    question::DNSQuestion,
+    record::{DNSRecord, DNSRecordResult, TYPE_NS},
+    TYPE_A,
+};
 
 pub struct DNSPacket {
     header: DNSHeader,
@@ -10,6 +15,15 @@ pub struct DNSPacket {
     answers: Vec<DNSRecord>,
     authorities: Vec<DNSRecord>,
     additionals: Vec<DNSRecord>,
+}
+
+fn parse_records<B>(data: &mut B, num_records: u16) -> Vec<DNSRecord>
+where
+    B: Buf + Seek,
+{
+    (0..num_records)
+        .map(|_| DNSRecord::parse_record(data))
+        .collect()
 }
 
 impl DNSPacket {
@@ -21,15 +35,9 @@ impl DNSPacket {
         let questions = (0..header.num_questions)
             .map(|_| DNSQuestion::parse_question(data))
             .collect();
-        let answers = (0..header.num_answers)
-            .map(|_| DNSRecord::parse_record(data))
-            .collect();
-        let authorities = (0..header.num_authorities)
-            .map(|_| DNSRecord::parse_record(data))
-            .collect();
-        let additionals = (0..header.num_additionals)
-            .map(|_| DNSRecord::parse_record(data))
-            .collect();
+        let answers = parse_records(data, header.num_answers);
+        let authorities = parse_records(data, header.num_authorities);
+        let additionals = parse_records(data, header.num_additionals);
         DNSPacket {
             header,
             questions,
@@ -39,7 +47,38 @@ impl DNSPacket {
         }
     }
 
+    /// Returns the first A record in the answers section
+    pub fn get_answer(&self) -> Option<&DNSRecordResult> {
+        self.answers
+            .iter()
+            .find(|r| r.qtype() == TYPE_A)
+            .map(|r| r.res())
+    }
+
+    /// Returns the first A record in the additionals section
+    pub fn get_nameserver_ip(&self) -> Option<&DNSRecordResult> {
+        self.additionals
+            .iter()
+            .find(|r| r.qtype() == TYPE_A)
+            .map(|r| r.res())
+    }
+
+    pub fn get_nameserver(&self) -> Option<&DNSRecordResult> {
+        self.authorities
+            .iter()
+            .find(|r| r.qtype() == TYPE_NS)
+            .map(|r| r.res())
+    }
+
     pub fn answers(&self) -> &[DNSRecord] {
         self.answers.as_ref()
+    }
+
+    pub fn authorities(&self) -> &[DNSRecord] {
+        self.authorities.as_ref()
+    }
+
+    pub fn additionals(&self) -> &[DNSRecord] {
+        self.additionals.as_ref()
     }
 }
