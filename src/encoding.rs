@@ -78,4 +78,10 @@ mod test {
         ));
         assert_eq!("www.example.com", decoded)
     }
+
+    #[test]
+    fn test_encode_dns_name() {
+        let xs = encode_domain_name("google.com");
+        assert_eq!(xs, b"\x06google\x03com\x00");
+    }
 }

@@ -2,6 +2,7 @@ use bytes::{Buf, BufMut};
 
 use crate::encoding::decode_name_simple;
 
+#[derive(Debug)]
 pub struct DNSQuestion {
     pub name: Vec<u8>,
     pub qtype: u16,

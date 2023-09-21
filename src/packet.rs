@@ -9,6 +9,7 @@ use crate::{
     TYPE_A,
 };
 
+#[derive(Debug)]
 pub struct DNSPacket {
     header: DNSHeader,
     questions: Vec<DNSQuestion>,

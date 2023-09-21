@@ -1,10 +1,35 @@
-
+use std::net::IpAddr;
 
 use rand::SeedableRng;
 
-use crate::{record::DNSRecordResult, send_query, TYPE_A};
+use crate::{record::DNSRecordResult, TYPE_A, query::{send_query_async, send_query}};
 
-fn resolve2(domain_name: &str, record_type: u16) -> eyre::Result<DNSRecordResult> {
+pub async fn resolve_async(domain_name: &str, record_type: u16) -> eyre::Result<DNSRecordResult> {
+    let rng = &mut rand::rngs::SmallRng::from_entropy();
+    let mut domain_names = vec![domain_name.to_string()];
+    let mut nameserver: IpAddr = "198.41.0.4".parse().unwrap();
+
+    let ip = loop {
+        let response = send_query_async(rng, nameserver, domain_name, record_type).await?;
+        if let Some(ip @ DNSRecordResult::Address(a)) = response.get_answer() {
+            if domain_names.len() > 1 {
+                domain_names.pop();
+                nameserver = *a;
+            } else {
+                break ip.clone();
+            }
+        } else if let Some(DNSRecordResult::Address(ns_ip)) = response.get_nameserver_ip() {
+            nameserver = *ns_ip;
+        } else if let Some(DNSRecordResult::NameServer(ns)) = response.get_nameserver() {
+            domain_names.push(ns.to_string());
+        } else {
+            return Err(eyre::eyre!("No answer or nameserver found"));
+        }
+    };
+    Ok(ip)
+}
+
+pub fn resolve2(domain_name: &str, record_type: u16) -> eyre::Result<DNSRecordResult> {
     let rng = &mut rand::rngs::SmallRng::from_entropy();
     let mut nameserver = "198.41.0.4".parse().unwrap();
     let mut domain_names = vec![domain_name.to_string()];
@@ -31,7 +56,7 @@ fn resolve2(domain_name: &str, record_type: u16) -> eyre::Result<DNSRecordResult
     Ok(ip)
 }
 
-fn resolve(domain_name: &str, record_type: u16) -> eyre::Result<DNSRecordResult> {
+pub fn resolve(domain_name: &str, record_type: u16) -> eyre::Result<DNSRecordResult> {
     let rng = &mut rand::rngs::SmallRng::from_entropy();
     let mut nameserver = "198.41.0.4".parse().unwrap();
     let ip = loop {

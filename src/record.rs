@@ -1,8 +1,8 @@
 use std::{io::Seek, net::IpAddr};
 
-use bytes::Buf;
+use bytes::{Buf, BufMut, BytesMut};
 
-use crate::encoding;
+use crate::encoding::{self, encode_domain_name};
 
 pub const TYPE_A: u16 = 1;
 pub const TYPE_NS: u16 = 2;
@@ -61,6 +61,41 @@ impl DNSRecord {
             ttl,
             res,
         }
+    }
+
+    fn to_record<B>(&self) -> BytesMut {
+        let mut bytes = BytesMut::new();
+        let name = encode_domain_name(&self.name);
+        bytes.put_slice(&name);
+        bytes.put_u16(self.qtype);
+        bytes.put_u16(self.class);
+        bytes.put_u32(self.ttl);
+        match self.res {
+            DNSRecordResult::Address(ip) => {
+                match ip {
+                    IpAddr::V4(ip) => {
+                        bytes.put_u16(4);
+                        bytes.put_slice(&ip.octets());
+                    }
+                    IpAddr::V6(ip) => {
+                        bytes.put_u16(16);
+                        bytes.put_slice(&ip.octets());
+                    }
+                }
+            }
+            DNSRecordResult::NameServer(ref name) => {
+                todo!()
+                // let name = encode_domain_name(name);
+                // bytes.put_u16(name.len() as u16);
+                // bytes.put_slice(&name);
+            }
+            DNSRecordResult::Unknown(ref data) => {
+                todo!()
+                // bytes.put_u16(data.len() as u16);
+                // bytes.put_slice(data);
+            }
+        }
+        todo!()
     }
 
     pub fn qtype(&self) -> u16 {
