@@ -1,4 +1,4 @@
-use std::io::Cursor;
+use std::{io::Cursor, sync::Arc};
 
 use bytes::Bytes;
 use diaw::{packet::DNSPacket, TYPE_A, resolve::resolve_async};
@@ -10,6 +10,7 @@ async fn main() -> eyre::Result<()> {
         .with_max_level(Level::TRACE)
         .init();
     let socket = tokio::net::UdpSocket::bind("127.0.0.1:7777").await?;
+    let socket = Arc::new(socket);
     let mut buf = [0; 1024];
     loop {
         let client = socket.recv_from(&mut buf).await?;
@@ -17,8 +18,10 @@ async fn main() -> eyre::Result<()> {
         let packet =
             DNSPacket::parse_dns_packet(&mut Cursor::new(Bytes::copy_from_slice(&buf[..])));
         tracing::info!("Parsed packet: {:?}", packet);
-        tokio::spawn(async move {
-            let response = resolve_async("example.com", TYPE_A).await;
-        });
+        // let s = socket.clone();
+        // tokio::spawn(async {
+        //     let response = resolve_async(s, "example.com", TYPE_A).await?;
+        //     eyre::Result::<()>::Ok(())
+        // });
     }
 }

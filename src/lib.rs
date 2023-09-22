@@ -5,6 +5,7 @@ mod query;
 mod question;
 mod record;
 pub mod resolve;
+pub mod listener;
 
 pub const TYPE_A: u16 = 1;
 pub const CLASS_IN: u16 = 1;
