@@ -4,9 +4,6 @@ use bytes::{Buf, BufMut, BytesMut};
 
 use crate::encoding::{self, encode_domain_name};
 
-pub const TYPE_A: u16 = 1;
-pub const TYPE_NS: u16 = 2;
-
 #[derive(Debug, Clone)]
 pub enum DNSRecordResult {
     NameServer(String),
@@ -71,18 +68,16 @@ impl DNSRecord {
         bytes.put_u16(self.class);
         bytes.put_u32(self.ttl);
         match self.res {
-            DNSRecordResult::Address(ip) => {
-                match ip {
-                    IpAddr::V4(ip) => {
-                        bytes.put_u16(4);
-                        bytes.put_slice(&ip.octets());
-                    }
-                    IpAddr::V6(ip) => {
-                        bytes.put_u16(16);
-                        bytes.put_slice(&ip.octets());
-                    }
+            DNSRecordResult::Address(ip) => match ip {
+                IpAddr::V4(ip) => {
+                    bytes.put_u16(4);
+                    bytes.put_slice(&ip.octets());
                 }
-            }
+                IpAddr::V6(ip) => {
+                    bytes.put_u16(16);
+                    bytes.put_slice(&ip.octets());
+                }
+            },
             DNSRecordResult::NameServer(ref name) => {
                 todo!()
                 // let name = encode_domain_name(name);

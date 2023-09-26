@@ -1,20 +1,24 @@
 mod encoding;
 mod header;
+pub mod listener;
 pub mod packet;
 mod query;
 mod question;
 mod record;
 pub mod resolve;
-pub mod listener;
+pub mod simple;
 
 pub const TYPE_A: u16 = 1;
+pub const TYPE_NS: u16 = 2;
 pub const CLASS_IN: u16 = 1;
 
 #[cfg(test)]
 mod test {
-    use std::{net::IpAddr, str::FromStr};
     use rand::SeedableRng;
-    use crate::query::send_query;
+    use std::{net::IpAddr, str::FromStr};
+
+    use crate::simple::query::send_query;
+
     use super::*;
 
     #[test]

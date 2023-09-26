@@ -1,7 +1,7 @@
 use std::{io::Cursor, sync::Arc};
 
 use bytes::Bytes;
-use diaw::{packet::DNSPacket, TYPE_A, resolve::resolve_async};
+use diaw::{packet::DNSPacket, resolve::resolve_async, TYPE_A};
 use tracing::Level;
 
 #[tokio::main]

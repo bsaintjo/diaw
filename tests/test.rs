@@ -1,4 +1,4 @@
-use std::{str::FromStr, sync::OnceLock, thread, };
+use std::{str::FromStr, sync::OnceLock, thread};
 
 use diaw::listener;
 use tracing::Level;

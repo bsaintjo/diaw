@@ -1,8 +1,6 @@
-use std::{io::Cursor, net::SocketAddr, future::Future, pin::Pin, sync::Arc};
+use std::{future::Future, io::Cursor, net::SocketAddr, pin::Pin};
 
 use bytes::Bytes;
-use tokio::net::UdpSocket;
-use tracing::Level;
 
 use crate::{packet::DNSPacket, resolve::resolve_async, TYPE_A};
 
@@ -27,7 +25,10 @@ async fn listen_inner(udp: std::net::UdpSocket) -> eyre::Result<()> {
     }
 }
 
-pub fn listener() -> Result<(SocketAddr, Pin<Box<impl Future<Output=eyre::Result<()>>>>), Box<dyn std::error::Error>> {
+pub fn listener() -> Result<
+    (SocketAddr, Pin<Box<impl Future<Output = eyre::Result<()>>>>),
+    Box<dyn std::error::Error>,
+> {
     let socket = std::net::UdpSocket::bind("127.0.0.1:0")?;
     socket.set_nonblocking(true)?;
     let address = socket.local_addr()?;

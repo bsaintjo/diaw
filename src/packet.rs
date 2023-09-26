@@ -5,8 +5,8 @@ use bytes::Buf;
 use crate::{
     header::DNSHeader,
     question::DNSQuestion,
-    record::{DNSRecord, DNSRecordResult, TYPE_NS},
-    TYPE_A,
+    record::{DNSRecord, DNSRecordResult},
+    TYPE_A, TYPE_NS,
 };
 
 #[derive(Debug)]
