@@ -2,7 +2,7 @@ use std::{future::Future, io::Cursor, net::SocketAddr, pin::Pin};
 
 use bytes::Bytes;
 
-use crate::{packet::DNSPacket, resolve::resolve_async, TYPE_A};
+use crate::{packet::DNSPacket, r#async::resolve::resolve_async, TYPE_A};
 
 async fn listen_inner(udp: std::net::UdpSocket) -> eyre::Result<()> {
     let mut buf = [0; 1024];

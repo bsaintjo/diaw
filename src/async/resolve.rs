@@ -2,10 +2,7 @@ use std::net::IpAddr;
 
 use rand::SeedableRng;
 
-use crate::{
-    query::{send_query_async, send_query_async2},
-    record::DNSRecordResult,
-};
+use crate::{r#async::query::send_query_async, record::DNSRecordResult};
 
 pub async fn resolve_async(domain_name: &str, record_type: u16) -> eyre::Result<DNSRecordResult> {
     tracing::debug!("Resolving {} for type {}", domain_name, record_type);
@@ -15,7 +12,7 @@ pub async fn resolve_async(domain_name: &str, record_type: u16) -> eyre::Result<
 
     let ip = loop {
         let response =
-            send_query_async2(rng, nameserver, domain_names.last().unwrap(), record_type).await?;
+            send_query_async(rng, nameserver, domain_names.last().unwrap(), record_type).await?;
         tracing::debug!("Response: {:?}", response);
         if let Some(ip @ DNSRecordResult::Address(a)) = response.get_answer() {
             if domain_names.len() > 1 {

@@ -1,6 +1,6 @@
 use std::{str::FromStr, sync::OnceLock, thread};
 
-use diaw::listener;
+use diaw::r#async::listener;
 use tracing::Level;
 use trust_dns_client::{
     client::{AsyncClient, Client, ClientHandle, SyncClient},

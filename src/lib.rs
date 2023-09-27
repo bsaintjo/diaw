@@ -1,11 +1,9 @@
+pub mod r#async;
 mod encoding;
 mod header;
-pub mod listener;
 pub mod packet;
-mod query;
 mod question;
 mod record;
-pub mod resolve;
 pub mod simple;
 
 pub const TYPE_A: u16 = 1;

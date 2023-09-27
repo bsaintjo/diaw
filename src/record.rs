@@ -34,14 +34,14 @@ impl DNSRecord {
         let data_len = bytes.get_u16() as usize;
 
         let res = match qtype {
-            TYPE_A => {
+            crate::TYPE_A => {
                 let mut data = vec![0; data_len];
                 bytes.copy_to_slice(&mut data);
                 let raw_ip: [u8; 4] = data.as_slice().try_into().unwrap();
                 let ip = IpAddr::from(raw_ip);
                 DNSRecordResult::Address(ip)
             }
-            TYPE_NS => {
+            crate::TYPE_NS => {
                 let name = encoding::decode_name(bytes);
                 DNSRecordResult::NameServer(name)
             }
